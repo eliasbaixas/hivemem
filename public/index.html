@@ -32,6 +32,11 @@
         <script src="js/libs/jquery-1.7.1.js"></script>
         
         <style>
+        .item.focusin {
+          background-color: #373737;
+          color:#bbb;
+        }
+
         body {
           background-color: #333;
         }
@@ -94,6 +99,21 @@
 
 
         $(document).ready(function(){
+          // UI
+          $('.item').live('focusin',function(){$(this).addClass('focusin')})
+                  .live('focusout',function(){$(this).removeClass('focusin')})
+
+          // Handle contenteditable change
+          $('[contenteditable]')
+            .live('focus', function(){
+                $(this).data('before', $(this).text())
+            })
+            .live('blur', function(){
+              if($(this).data('before') != $(this).text()){
+                  $(this).trigger('change');
+                }
+            }) 
+
           //fetch data
           items.fetch({
             success: function(e){
@@ -101,18 +121,20 @@
                 new ItemView({model:m})
               })
               //fill filter list
-              var tags = [];
-              items.each(function(item){
-                $.each(item.get('tags'), function(id, tag){
-                  tags = tags.concat([tag]);
-                })
-              })
-              tags = _.uniq(tags);
-              tags = tags.sort();
-              $('#tag-filter li.tag').remove();
-              $.each(tags, function(id, tag){
-                $('#tag-filter').append('<li class="tag"><a href="#">' + tag + '</a></li>')
-              })
+              // var tags = [];
+              // items.each(function(item){
+              //   tags = item.get('tags');
+              //   if(tags)
+              //     $.each(tags, function(id, tag){
+              //       tags = tags.concat([tag]);
+              //     })
+              // })
+              // tags = _.uniq(tags);
+              // tags = tags.sort();
+              // $('#tag-filter li.tag').remove();
+              // $.each(tags, function(id, tag){
+              //   $('#tag-filter').append('<li class="tag"><a href="#">' + tag + '</a></li>')
+              // })
 
             }
           });
@@ -129,7 +151,8 @@
           $('#id_new').focus();
           $('#id_frm').submit(function(){
             var txt = $('#id_new').val();
-            var i = new Item({text: txt})
+            var i = new Item();
+            i.settext(txt);
             items.add(i)
             var v = new ItemView({model: i})
             $('#id_new').val('');

@@ -9,15 +9,15 @@ window.Item = Backbone.Model.extend({
         // parse tags from text
         var tags = this.get('tags');
         var txt = this.get('text');
-        var ptags = txt.match(/#\w+/g);
-        if(ptags){
-          $.each(ptags, function(idx, ptag){
-            tags = tags.concat([ptag]);
-          });
-          tags = _.uniq(tags);
-          console.log(tags);
-          this.set('tags', tags);
-        }
+        // var ptags = txt.match(/#\w+/g);
+        // if(ptags){
+        //   $.each(ptags, function(idx, ptag){
+        //     tags = tags.concat([ptag]);
+        //   });
+        //   tags = _.uniq(tags);
+        //   console.log(tags);
+        //   this.set('tags', tags);
+        // }
 
         this.set('satisfiesFilterAnd', true);
         this.set('satisfiesFilterOr', true);
@@ -55,22 +55,45 @@ window.Item = Backbone.Model.extend({
       this.trigger('change');
     },
     
+    autotag: function(text){
+      console.log('in autotag: ' + text);
+      match = text.match(/^\w+/);
+        if(match){
+          firstword = match[0].toLowerCase();
+          if(firstword in projects){
+            el = projects[firstword];
+            text = text.replace(match + ' ', "<b style='color:" + el.color + "' title='" + el.title + "'>[" + el.name + '] </b>');
+          }
+        }
+      return text;
+    },
+
+    settext: function(text){
+      console.log('settext: ' + text);
+      this.set('text', this.autotag(text));
+      return this;
+    },
+
     get_text_as_html: function(){
     txt = this.get('text');
 
     // check for project definition
-    firstword = txt.match(/^\w+/);
-    if(firstword in projects){
-      proj = projects[firstword];
-      txt = txt.replace(firstword + ' ', "<b style='color:" + proj.color + "' title='" + proj.title + "'>[" + projects[firstword].name + '] </b>');
+    match = txt.match(/^\[(\w+)\]/);
+    if(match){
+      firstword = match[1].toLowerCase();
+      $.each(projects, function(dix, el){
+        if(el.name.toLowerCase() == firstword){
+          txt = txt.replace(match[0] + ' ', "<b style='color:" + el.color + "' title='" + el.title + "'>[" + el.name + '] </b>');
+          return false;
+        }
+      });
     }
 
 
     return txt.
-      replace(/\s(#\w+)/g, '<span class="label">$1</span>').
-      replace(/^(\[\w+\])/, '<b>$1</b>');
+      replace(/\s(#\w+)/g, ' <span class="label">$1</span>');
     }
-
+      // .replace(/^(\[\w+\])/, '<b>$1</b>'); }
 
     });
 
@@ -99,7 +122,7 @@ window.app = new App({
 
 window.Items = Backbone.Collection.extend({
   model: Item,
-  url: 'entries.json',
+  url: 'entries',
 
 
   filter: function(){
@@ -119,6 +142,7 @@ window.ItemView = Backbone.View.extend({
 
     events: {
         // 'click': 'open'
+        'change [contentEditable]': 'change'
     },
 
     initialize: function() {
@@ -141,7 +165,18 @@ window.ItemView = Backbone.View.extend({
     open: function(){
         var tmpl = _.template($('#modal-template').html());
         $(tmpl(this.model.toJSON())).modal();
+      },
+
+    change: function(){
+      txt = $(this.el).find('[contentEditable]').text();
+      if(txt){
+        this.model.settext(txt);
+        this.model.save();
+      } else {// destroy
+        console.log('destroy');
+        this.model.destroy();
       }
+    }
 
 });
 
