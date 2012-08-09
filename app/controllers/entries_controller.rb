@@ -2,7 +2,7 @@ class EntriesController < ApplicationController
   # GET /entries
   # GET /entries.json
   def index
-    @entries = Entry.all
+    @entries = Entry.all(:order => "created_at")
 
     respond_to do |format|
       format.html # index.html.erb
@@ -36,6 +36,7 @@ class EntriesController < ApplicationController
   def edit
     @entry = Entry.find(params[:id])
   end
+
 
   # POST /entries
   # POST /entries.json
